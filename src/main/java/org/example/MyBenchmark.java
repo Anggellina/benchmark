@@ -27,19 +27,40 @@ package org.example;
 
 import org.openjdk.jmh.annotations.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class MyBenchmark {
 
     @State(Scope.Thread)
     public static class MyState {
-        List<String> strings = new ArrayList<>();
+        List<String> list = new ArrayList<>();
+        Set<String> set = new HashSet<>();
         Trie trie = new Trie();
+
+        String stringToFind;
 
         @Setup(Level.Iteration)
         public void doSetup() {
+            int leftLimit = 97;
+            int rightLimit = 122;
+            Random random = new Random();
+
+            for (int i = 0; i < 250000; i++) {
+                int targetStringLength = (int) Math.floor(Math.random()*(10-1+1)+1);
+                String generatedString = random.ints(leftLimit, rightLimit + 1)
+                        .limit(targetStringLength)
+                        .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                        .toString();
+                list.add(generatedString);
+                set.add(generatedString);
+                trie.add(generatedString);
+            }
+
+            stringToFind = random.ints(leftLimit, rightLimit + 1)
+                    .limit((int) Math.floor(Math.random()*(10-1+1)+1))
+                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                    .toString();
         }
     }
 
@@ -47,8 +68,8 @@ public class MyBenchmark {
     @Fork(1)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public void testMethod(MyState str) {
-
+    public void testMethod(MyState generator) {
+        generator.trie.contains(generator.stringToFind);
     }
 
 }
